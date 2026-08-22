@@ -10,13 +10,13 @@ export default function App() {
     const hash = window.location.hash.toLowerCase();
     const pathname = window.location.pathname.toLowerCase();
 
+    if (hash.includes('questions') || pathname.startsWith('/questions')) return 'questions';
     if (hash.includes('admin') || pathname.startsWith('/admin')) return 'admin';
     return 'player';
   };
 
   const [currentRoute, setCurrentRoute] = useState(getRouteFromUrl);
 
-  // Listen to hash changes and history popstate
   useEffect(() => {
     const handleLocationChange = () => {
       setCurrentRoute(getRouteFromUrl());
@@ -34,13 +34,21 @@ export default function App() {
     setCurrentRoute(route);
     if (route === 'admin') {
       window.history.pushState({}, '', '/admin');
+    } else if (route === 'questions') {
+      window.history.pushState({}, '', '/questions');
     } else {
       window.history.pushState({}, '', '/');
     }
   };
 
-  if (currentRoute === 'admin') {
-    return <AdminView gameState={gameState} onNavigate={navigateTo} />;
+  if (currentRoute === 'admin' || currentRoute === 'questions') {
+    return (
+      <AdminView
+        gameState={gameState}
+        currentRoute={currentRoute}
+        onNavigate={navigateTo}
+      />
+    );
   }
 
   return <PlayerView gameState={gameState} onNavigate={navigateTo} />;
