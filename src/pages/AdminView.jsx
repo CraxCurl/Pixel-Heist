@@ -100,11 +100,13 @@ export function AdminView({ gameState, currentRoute, onNavigate }) {
         isConnected={gameState.isConnected}
       />
 
-      <main className="flex-1 p-4 sm:p-6 w-full max-w-4xl mx-auto overflow-y-auto">
+      <main className="flex-1 min-h-[calc(100vh-48px)] flex flex-col items-center justify-center p-4 sm:p-6 w-full max-w-4xl mx-auto overflow-y-auto">
         {currentRoute === 'questions' ? (
           <QuestionsView gameState={gameState} />
         ) : (
-          <AdminControls gameState={gameState} />
+          <div className="w-full my-auto py-6 flex items-center justify-center">
+            <AdminControls gameState={gameState} />
+          </div>
         )}
       </main>
     </div>
