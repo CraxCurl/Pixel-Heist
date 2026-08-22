@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Play,
+  Pause,
   Trophy,
   Plus,
   Trash2,
@@ -24,6 +25,7 @@ export function AdminControls({ gameState }) {
     showHint,
     isConnected,
     startNewRound,
+    togglePause,
     revealAnswer,
     toggleHint,
     selectQuestion,
@@ -71,6 +73,8 @@ export function AdminControls({ gameState }) {
   };
 
   const hasImages = questions.length > 0;
+  const isRunning = status === 'RUNNING';
+  const isPaused = status === 'PAUSED';
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6 p-6 md:p-8 bg-slate-900/60 border border-slate-800 rounded-3xl backdrop-blur-xl shadow-2xl relative">
@@ -106,7 +110,7 @@ export function AdminControls({ gameState }) {
         {hasImages && currentQuestion?.hint && (
           <button
             onClick={toggleHint}
-            className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border transition-all ${
+            className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
               showHint
                 ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.6)]'
                 : 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
@@ -121,25 +125,55 @@ export function AdminControls({ gameState }) {
       {/* MAIN BIG ACTION BUTTONS */}
       <div className="flex flex-col gap-4">
         
-        {/* 1. BIG START NEW ROUND BUTTON */}
-        <button
-          onClick={startNewRound}
-          disabled={!hasImages}
-          className={`w-full py-6 px-8 rounded-2xl font-black text-2xl md:text-3xl tracking-widest uppercase flex items-center justify-center gap-3 transition-all transform shadow-2xl ${
-            hasImages
-              ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-[0_0_40px_rgba(16,185,129,0.5)] active:scale-[0.99] cursor-pointer'
-              : 'bg-slate-800/40 text-slate-600 border border-slate-800 cursor-not-allowed'
-          }`}
-        >
-          <Play className="w-8 h-8 fill-current" />
-          <span>{status === 'RUNNING' ? 'RESTART NEW ROUND' : 'START NEW ROUND'}</span>
-        </button>
+        {/* ROW 1: START NEW ROUND & PAUSE/RESUME */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          
+          {/* 1. BIG START NEW ROUND BUTTON */}
+          <button
+            onClick={startNewRound}
+            disabled={!hasImages}
+            className={`md:col-span-2 py-5 px-6 rounded-2xl font-black text-xl md:text-2xl tracking-wider uppercase flex items-center justify-center gap-2.5 transition-all transform shadow-xl ${
+              hasImages
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.4)] active:scale-[0.99] cursor-pointer'
+                : 'bg-slate-800/40 text-slate-600 border border-slate-800 cursor-not-allowed'
+            }`}
+          >
+            <Play className="w-6 h-6 fill-current" />
+            <span>{isRunning || isPaused ? 'RESTART ROUND' : 'START NEW ROUND'}</span>
+          </button>
 
-        {/* 2. BIG REVEAL ANSWER BUTTON */}
+          {/* 2. PAUSE / RESUME BUTTON */}
+          <button
+            onClick={togglePause}
+            disabled={!hasImages || (!isRunning && !isPaused)}
+            className={`py-5 px-6 rounded-2xl font-black text-xl tracking-wider uppercase flex items-center justify-center gap-2 transition-all transform shadow-xl ${
+              isPaused
+                ? 'bg-amber-500 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:bg-amber-400 active:scale-[0.99] cursor-pointer animate-pulse'
+                : isRunning
+                ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 active:scale-[0.99] cursor-pointer'
+                : 'bg-slate-800/40 text-slate-600 border border-slate-800 cursor-not-allowed'
+            }`}
+          >
+            {isPaused ? (
+              <>
+                <Play className="w-6 h-6 fill-current" />
+                <span>RESUME</span>
+              </>
+            ) : (
+              <>
+                <Pause className="w-6 h-6 fill-current" />
+                <span>PAUSE</span>
+              </>
+            )}
+          </button>
+
+        </div>
+
+        {/* 3. BIG REVEAL ANSWER BUTTON */}
         <button
           onClick={revealAnswer}
           disabled={!hasImages || status === 'REVEALED' || status === 'TIMEOUT'}
-          className={`w-full py-6 px-8 rounded-2xl font-black text-2xl md:text-3xl tracking-widest uppercase flex items-center justify-center gap-3 transition-all transform shadow-2xl ${
+          className={`w-full py-5 px-8 rounded-2xl font-black text-2xl md:text-3xl tracking-widest uppercase flex items-center justify-center gap-3 transition-all transform shadow-2xl ${
             hasImages && status !== 'REVEALED' && status !== 'TIMEOUT'
               ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white shadow-[0_0_40px_rgba(147,51,234,0.5)] active:scale-[0.99] cursor-pointer'
               : 'bg-slate-800/40 text-slate-600 border border-slate-800 cursor-not-allowed'
@@ -165,7 +199,7 @@ export function AdminControls({ gameState }) {
 
           <button
             onClick={() => setShowUploader(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-black text-xs uppercase tracking-wider hover:bg-cyan-400 transition-all shadow-md"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-black text-xs uppercase tracking-wider hover:bg-cyan-400 transition-all shadow-md cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Add Image</span>
@@ -193,7 +227,7 @@ export function AdminControls({ gameState }) {
               >
                 <button
                   onClick={() => selectQuestion(idx)}
-                  className="w-full flex flex-col items-center justify-center text-left"
+                  className="w-full flex flex-col items-center justify-center text-left cursor-pointer"
                 >
                   <div className="w-full h-14 rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center">
                     <img src={q.image} alt={q.title} className="w-full h-full object-cover" />
@@ -208,7 +242,7 @@ export function AdminControls({ gameState }) {
                     e.stopPropagation();
                     deleteQuestion(idx);
                   }}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all shadow-md"
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all shadow-md cursor-pointer"
                   title="Delete Image"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { PixelCanvas } from '../components/PixelCanvas';
 import { ConfettiEffect } from '../components/ConfettiEffect';
-import { Maximize, Volume2, VolumeX, Lightbulb, ImageOff } from 'lucide-react';
+import { Maximize, Volume2, VolumeX, Lightbulb, ImageOff, Pause } from 'lucide-react';
 
 export function PlayerView({ gameState }) {
   const {
@@ -19,6 +19,7 @@ export function PlayerView({ gameState }) {
   const remainingMs = Math.max(0, duration - elapsedTime);
   const remainingSec = (remainingMs / 1000).toFixed(1);
   const isWin = status === 'REVEALED';
+  const isPaused = status === 'PAUSED';
   const hasImages = questions.length > 0;
 
   const toggleFullscreen = () => {
@@ -63,7 +64,7 @@ export function PlayerView({ gameState }) {
       <div className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-transparent">
         <button
           onClick={toggleSound}
-          className="p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-900/70 border border-white/10 text-slate-300 hover:text-white backdrop-blur-md transition-all"
+          className="p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-900/70 border border-white/10 text-slate-300 hover:text-white backdrop-blur-md transition-all cursor-pointer"
           title={soundMuted ? 'Unmute Audio' : 'Mute Audio'}
         >
           {soundMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
@@ -71,7 +72,7 @@ export function PlayerView({ gameState }) {
 
         <button
           onClick={toggleFullscreen}
-          className="p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-900/70 border border-white/10 text-slate-300 hover:text-white backdrop-blur-md transition-all"
+          className="p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-900/70 border border-white/10 text-slate-300 hover:text-white backdrop-blur-md transition-all cursor-pointer"
           title="Fullscreen"
         >
           <Maximize className="w-4 h-4" />
@@ -102,10 +103,15 @@ export function PlayerView({ gameState }) {
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center">
           <div className="px-6 py-2.5 rounded-full bg-slate-950/40 backdrop-blur-md border border-white/10 shadow-2xl flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${
-              status === 'RUNNING' ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+              isPaused ? 'bg-amber-400 animate-pulse' : status === 'RUNNING' ? 'bg-emerald-400 animate-ping' : 'bg-slate-400'
             }`} />
-            <span className="font-mono font-black text-3xl sm:text-4xl text-white tracking-tight">
+            <span className="font-mono font-black text-3xl sm:text-4xl text-white tracking-tight flex items-center gap-2">
               {remainingSec}s
+              {isPaused && (
+                <span className="text-xs font-sans font-black bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  PAUSED
+                </span>
+              )}
             </span>
           </div>
         </div>
