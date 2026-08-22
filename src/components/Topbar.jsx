@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Lock, Tv } from 'lucide-react';
+import { ExternalLink, Lock, Tv, Settings } from 'lucide-react';
 
 export function Topbar({ currentRoute, onNavigate, onLock }) {
   return (
@@ -8,14 +8,31 @@ export function Topbar({ currentRoute, onNavigate, onLock }) {
         
         {/* Left: Clean "Admin Panel" Title */}
         <div className="flex items-center gap-2">
-          <span className="font-mono font-bold text-sm tracking-wider uppercase text-white">
+          <button
+            onClick={() => onNavigate('admin')}
+            className="font-mono font-bold text-sm tracking-wider uppercase text-white hover:text-[#A1A1AA] transition-colors cursor-pointer"
+          >
             Admin Panel
-          </span>
+          </button>
         </div>
 
         {/* Right: Quick Action Buttons */}
         <div className="flex items-center gap-2">
           
+          {/* Question Bank Settings Button */}
+          <button
+            onClick={() => onNavigate(currentRoute === 'questions' ? 'admin' : 'questions')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors cursor-pointer border ${
+              currentRoute === 'questions'
+                ? 'bg-white text-black font-semibold border-white'
+                : 'bg-[#111111] hover:bg-[#1A1A1A] border-[#2A2A2A] text-white'
+            }`}
+            title="Manage Question Bank & Add Images"
+          >
+            <Settings className={`w-3.5 h-3.5 ${currentRoute === 'questions' ? 'text-black' : 'text-[#A1A1AA]'}`} />
+            <span>Question Bank</span>
+          </button>
+
           {/* Visit Player Screen Button */}
           <button
             onClick={() => onNavigate('player')}
