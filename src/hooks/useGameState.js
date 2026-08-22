@@ -70,8 +70,8 @@ export function useGameState() {
   }, []);
 
   const fetchState = useCallback(async () => {
-    // If a user just triggered an action in the last 2.5 seconds, ignore polling overwrites!
-    if (Date.now() - lastLocalUpdateRef.current < 2500) {
+    // If a user just triggered an action in the last 4 seconds, ignore polling overwrites!
+    if (Date.now() - lastLocalUpdateRef.current < 4000) {
       return;
     }
 
@@ -98,14 +98,14 @@ export function useGameState() {
     } catch (e) {}
   }, []);
 
-  const postStateUpdate = useCallback(async (updates) => {
+  const postStateUpdate = useCallback((updates) => {
     lastLocalUpdateRef.current = Date.now();
     try {
-      await fetch('/api/game-state', {
+      fetch('/api/game-state', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
-      });
+      }).catch(() => {});
     } catch (e) {}
   }, []);
 
@@ -148,7 +148,7 @@ export function useGameState() {
       s.on('disconnect', () => setIsConnected(false));
       s.on('questions:updated', (updated) => setQuestions(updated || []));
       s.on('game:state_changed', (state) => {
-        if (Date.now() - lastLocalUpdateRef.current < 2500) return;
+        if (Date.now() - lastLocalUpdateRef.current < 4000) return;
         if (state) {
           if (state.currentIndex !== undefined) setCurrentIndex(state.currentIndex);
           if (state.status !== undefined) setStatus(state.status);
@@ -178,25 +178,29 @@ export function useGameState() {
     };
   }, [fetchQuestions, fetchState]);
 
-  // START NEW ROUND
+  // START NEW ROUND (Guaranteed 1-Click Instant Execution)
   const handleStartNewRound = useCallback(() => {
-    if (questions.length === 0) return;
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-
     lastLocalUpdateRef.current = Date.now();
+
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+    }
+
+    let currentQList = questions;
+    if (currentQList.length === 0) {
+      fetchQuestions();
+    }
 
     let nextIdx = currentIndex;
     let nextUsed = usedIds;
 
-    // Pick new random image whenever starting round from REVEALED, TIMEOUT, or IDLE!
-    if (status === 'REVEALED' || status === 'TIMEOUT' || status === 'IDLE') {
-      const result = pickNextRandomIndex(questions, usedIds);
-      nextIdx = result.index;
-      nextUsed = result.nextUsed;
-    }
+    // Pick new random image
+    const result = pickNextRandomIndex(currentQList, usedIds);
+    nextIdx = result.index;
+    nextUsed = result.nextUsed;
 
     const nowEpoch = Date.now();
-    
+
     // Instant local state update
     setCurrentIndex(nextIdx);
     setUsedIds(nextUsed);
@@ -225,11 +229,10 @@ export function useGameState() {
     if (s && s.connected) {
       s.emit('admin:start_round', { index: nextIdx, usedIds: nextUsed, startTime: nowEpoch });
     }
-  }, [status, questions, usedIds, currentIndex, pickNextRandomIndex, postStateUpdate]);
+  }, [questions, usedIds, currentIndex, pickNextRandomIndex, postStateUpdate, fetchQuestions]);
 
   // REVEAL ANSWER
   const handleRevealAnswer = useCallback(() => {
-    if (status === 'REVEALED' || status === 'TIMEOUT' || questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
     lastLocalUpdateRef.current = Date.now();
@@ -256,7 +259,7 @@ export function useGameState() {
     if (s && s.connected) {
       s.emit('admin:reveal_answer', { finalElapsed, seconds });
     }
-  }, [status, startTime, elapsedTime, questions.length, postStateUpdate]);
+  }, [status, startTime, elapsedTime, postStateUpdate]);
 
   // TOGGLE / SHOW HINT
   const toggleHint = useCallback(() => {
