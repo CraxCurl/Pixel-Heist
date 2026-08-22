@@ -4,7 +4,8 @@ import {
   Trophy,
   Database,
   Wifi,
-  Lightbulb
+  Lightbulb,
+  RotateCcw
 } from 'lucide-react';
 
 export function AdminControls({ gameState }) {
@@ -57,7 +58,7 @@ export function AdminControls({ gameState }) {
           </p>
         )}
 
-        {/* SHOW/HIDE HINT POPUP BUTTON (Vercel Dark Theme) */}
+        {/* SHOW/HIDE HINT POPUP BUTTON */}
         {hasImages && currentQuestion?.hint && (
           <button
             onClick={toggleHint}
@@ -73,10 +74,10 @@ export function AdminControls({ gameState }) {
         )}
       </div>
 
-      {/* 3. MOBILE-ACCESSIBLE VERCEL-MATCHING ACTION BUTTONS */}
+      {/* 3. MOBILE-ACCESSIBLE ACTION BUTTONS */}
       <div className="flex flex-col gap-3">
         
-        {/* 1. START NEW ROUND BUTTON (Secondary Vercel Dark Style) */}
+        {/* 1. START NEXT ROUND / RESTART ROUND BUTTON */}
         <button
           onClick={startNewRound}
           disabled={!hasImages}
@@ -86,11 +87,20 @@ export function AdminControls({ gameState }) {
               : 'bg-[#111111] text-[#71717A] border border-[#1F1F1F] cursor-not-allowed'
           }`}
         >
-          <Play className="w-5 h-5 fill-current text-white" />
-          <span>{isRunning ? 'RESTART ROUND' : 'START NEW ROUND'}</span>
+          {isRunning ? (
+            <>
+              <RotateCcw className="w-5 h-5 text-white" />
+              <span>RESTART ROUND</span>
+            </>
+          ) : (
+            <>
+              <Play className="w-5 h-5 fill-current text-white" />
+              <span>START NEXT ROUND</span>
+            </>
+          )}
         </button>
 
-        {/* 2. REVEAL ANSWER BUTTON (Primary Vercel Solid White Style) */}
+        {/* 2. REVEAL ANSWER BUTTON */}
         <button
           onClick={revealAnswer}
           disabled={!hasImages || isRevealed}

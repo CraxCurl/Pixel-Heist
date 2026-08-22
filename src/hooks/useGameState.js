@@ -45,6 +45,7 @@ export function useGameState() {
   const animFrameRef = useRef(null);
   const pollTimerRef = useRef(null);
   const lastWarningRef = useRef({ tenSec: false, fiveSec: false });
+  const lastLocalUpdateRef = useRef(0);
 
   const toggleSound = useCallback(() => {
     setSoundMuted((prev) => {
@@ -69,6 +70,11 @@ export function useGameState() {
   }, []);
 
   const fetchState = useCallback(async () => {
+    // If a user just triggered an action in the last 2.5 seconds, ignore polling overwrites!
+    if (Date.now() - lastLocalUpdateRef.current < 2500) {
+      return;
+    }
+
     try {
       const res = await fetch('/api/game-state');
       if (res.ok) {
@@ -79,7 +85,6 @@ export function useGameState() {
           if (state.showHint !== undefined) setShowHint(state.showHint);
           if (state.usedIds) setUsedIds(state.usedIds);
 
-          // DO NOT overwrite active running local tick if round is already running smoothly!
           if (state.status === 'RUNNING' && state.startTime) {
             setStartTime((prev) => (prev ? prev : state.startTime));
           } else {
@@ -94,12 +99,13 @@ export function useGameState() {
   }, []);
 
   const postStateUpdate = useCallback(async (updates) => {
+    lastLocalUpdateRef.current = Date.now();
     try {
-      fetch('/api/game-state', {
+      await fetch('/api/game-state', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
-      }).catch(() => {});
+      });
     } catch (e) {}
   }, []);
 
@@ -130,11 +136,11 @@ export function useGameState() {
 
     pollTimerRef.current = setInterval(() => {
       fetchState();
-    }, 400);
+    }, 500);
 
     const qPollTimer = setInterval(() => {
       fetchQuestions();
-    }, 2000);
+    }, 3000);
 
     const s = getSocket();
     if (s) {
@@ -142,6 +148,7 @@ export function useGameState() {
       s.on('disconnect', () => setIsConnected(false));
       s.on('questions:updated', (updated) => setQuestions(updated || []));
       s.on('game:state_changed', (state) => {
+        if (Date.now() - lastLocalUpdateRef.current < 2500) return;
         if (state) {
           if (state.currentIndex !== undefined) setCurrentIndex(state.currentIndex);
           if (state.status !== undefined) setStatus(state.status);
@@ -176,9 +183,12 @@ export function useGameState() {
     if (questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
+    lastLocalUpdateRef.current = Date.now();
+
     let nextIdx = currentIndex;
     let nextUsed = usedIds;
 
+    // Pick new random image whenever starting round from REVEALED, TIMEOUT, or IDLE!
     if (status === 'REVEALED' || status === 'TIMEOUT' || status === 'IDLE') {
       const result = pickNextRandomIndex(questions, usedIds);
       nextIdx = result.index;
@@ -222,6 +232,8 @@ export function useGameState() {
     if (status === 'REVEALED' || status === 'TIMEOUT' || questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
+    lastLocalUpdateRef.current = Date.now();
+
     const nowEpoch = Date.now();
     const finalElapsed = (status === 'RUNNING' && startTime) ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
     const seconds = (finalElapsed / 1000).toFixed(2);
@@ -248,6 +260,7 @@ export function useGameState() {
 
   // TOGGLE / SHOW HINT
   const toggleHint = useCallback(() => {
+    lastLocalUpdateRef.current = Date.now();
     const nextState = !showHint;
     setShowHint(nextState);
 
@@ -264,6 +277,7 @@ export function useGameState() {
     if (index < 0 || index >= questions.length) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
+    lastLocalUpdateRef.current = Date.now();
     const selected = questions[index];
     const newUsed = usedIds.includes(selected.id) ? usedIds : [...usedIds, selected.id];
 
