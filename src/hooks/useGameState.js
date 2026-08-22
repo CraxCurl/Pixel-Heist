@@ -89,11 +89,11 @@ export function useGameState() {
 
   const postStateUpdate = useCallback(async (updates) => {
     try {
-      await fetch('/api/game-state', {
+      fetch('/api/game-state', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
-      });
+      }).catch(() => {});
     } catch (e) {}
   }, []);
 
@@ -117,15 +117,18 @@ export function useGameState() {
     };
   }, []);
 
-  // Initial fetch and polling loop
+  // Fast 200ms Polling Loop for instantaneous Vercel state sync
   useEffect(() => {
     fetchQuestions();
     fetchState();
 
     pollTimerRef.current = setInterval(() => {
       fetchState();
+    }, 200);
+
+    const qPollTimer = setInterval(() => {
       fetchQuestions();
-    }, 500);
+    }, 1500);
 
     const s = getSocket();
     if (s) {
@@ -147,6 +150,7 @@ export function useGameState() {
 
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (qPollTimer) clearInterval(qPollTimer);
       if (s) {
         s.off('connect');
         s.off('disconnect');
@@ -156,7 +160,7 @@ export function useGameState() {
     };
   }, [fetchQuestions, fetchState]);
 
-  // START NEW ROUND
+  // INSTANT START NEW ROUND
   const handleStartNewRound = useCallback(() => {
     if (questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -168,11 +172,13 @@ export function useGameState() {
       const result = pickNextRandomIndex(questions, usedIds);
       nextIdx = result.index;
       nextUsed = result.nextUsed;
-      setCurrentIndex(nextIdx);
-      setUsedIds(nextUsed);
     }
 
     const nowEpoch = Date.now();
+    
+    // Instant local state update (<1ms)
+    setCurrentIndex(nextIdx);
+    setUsedIds(nextUsed);
     setStatus('RUNNING');
     setStartTime(nowEpoch);
     setElapsedTime(0);
@@ -200,17 +206,17 @@ export function useGameState() {
     }
   }, [status, questions, usedIds, currentIndex, pickNextRandomIndex, postStateUpdate]);
 
-  // PAUSE / RESUME TOGGLE
+  // INSTANT PAUSE / RESUME TOGGLE (<1ms)
   const handleTogglePause = useCallback(() => {
     if (status !== 'RUNNING' && status !== 'PAUSED') return;
 
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
     if (status === 'RUNNING') {
-      // Pause round
       const nowEpoch = Date.now();
       const currentElapsed = startTime ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
 
+      // INSTANT OPTIMISTIC LOCAL PAUSE (<1ms)
       setStatus('PAUSED');
       setElapsedTime(currentElapsed);
       setStartTime(null);
@@ -228,10 +234,10 @@ export function useGameState() {
         s.emit('admin:pause_round', payload);
       }
     } else if (status === 'PAUSED') {
-      // Resume round
       const nowEpoch = Date.now();
       const newStartTime = nowEpoch - elapsedTime;
 
+      // INSTANT OPTIMISTIC LOCAL RESUME (<1ms)
       setStatus('RUNNING');
       setStartTime(newStartTime);
 
@@ -250,7 +256,7 @@ export function useGameState() {
     }
   }, [status, startTime, elapsedTime, postStateUpdate]);
 
-  // REVEAL ANSWER
+  // INSTANT REVEAL ANSWER
   const handleRevealAnswer = useCallback(() => {
     if (status === 'REVEALED' || status === 'TIMEOUT' || questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -259,6 +265,7 @@ export function useGameState() {
     const finalElapsed = (status === 'RUNNING' && startTime) ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
     const seconds = (finalElapsed / 1000).toFixed(2);
 
+    // Instant local reveal (<1ms)
     setStatus('REVEALED');
     setElapsedTime(finalElapsed);
     setRevealedAtTime(seconds);
