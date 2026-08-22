@@ -70,8 +70,8 @@ export function useGameState() {
   }, []);
 
   const fetchState = useCallback(async () => {
-    // If a user just triggered an action in the last 4 seconds, ignore polling overwrites!
-    if (Date.now() - lastLocalUpdateRef.current < 4000) {
+    // If local user triggered an action in last 2 seconds, don't overwrite local state
+    if (Date.now() - lastLocalUpdateRef.current < 2000) {
       return;
     }
 
@@ -84,14 +84,9 @@ export function useGameState() {
           if (state.status !== undefined) setStatus(state.status);
           if (state.showHint !== undefined) setShowHint(state.showHint);
           if (state.usedIds) setUsedIds(state.usedIds);
-
-          if (state.status === 'RUNNING' && state.startTime) {
-            setStartTime((prev) => (prev ? prev : state.startTime));
-          } else {
-            if (state.startTime !== undefined) setStartTime(state.startTime);
-            if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
-            if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
-          }
+          if (state.startTime !== undefined) setStartTime(state.startTime);
+          if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+          if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
           setIsConnected(true);
         }
       }
@@ -136,7 +131,7 @@ export function useGameState() {
 
     pollTimerRef.current = setInterval(() => {
       fetchState();
-    }, 500);
+    }, 400);
 
     const qPollTimer = setInterval(() => {
       fetchQuestions();
@@ -148,20 +143,15 @@ export function useGameState() {
       s.on('disconnect', () => setIsConnected(false));
       s.on('questions:updated', (updated) => setQuestions(updated || []));
       s.on('game:state_changed', (state) => {
-        if (Date.now() - lastLocalUpdateRef.current < 4000) return;
+        if (Date.now() - lastLocalUpdateRef.current < 2000) return;
         if (state) {
           if (state.currentIndex !== undefined) setCurrentIndex(state.currentIndex);
           if (state.status !== undefined) setStatus(state.status);
           if (state.showHint !== undefined) setShowHint(state.showHint);
           if (state.usedIds) setUsedIds(state.usedIds);
-
-          if (state.status === 'RUNNING' && state.startTime) {
-            setStartTime((prev) => (prev ? prev : state.startTime));
-          } else {
-            if (state.startTime !== undefined) setStartTime(state.startTime);
-            if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
-            if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
-          }
+          if (state.startTime !== undefined) setStartTime(state.startTime);
+          if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+          if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
         }
       });
     }
@@ -178,7 +168,7 @@ export function useGameState() {
     };
   }, [fetchQuestions, fetchState]);
 
-  // START NEW ROUND (Guaranteed 1-Click Instant Execution)
+  // START NEW ROUND
   const handleStartNewRound = useCallback(() => {
     lastLocalUpdateRef.current = Date.now();
 
@@ -191,17 +181,13 @@ export function useGameState() {
       fetchQuestions();
     }
 
-    let nextIdx = currentIndex;
-    let nextUsed = usedIds;
-
-    // Pick new random image
     const result = pickNextRandomIndex(currentQList, usedIds);
-    nextIdx = result.index;
-    nextUsed = result.nextUsed;
+    const nextIdx = result.index;
+    const nextUsed = result.nextUsed;
 
     const nowEpoch = Date.now();
 
-    // Instant local state update
+    // Instant local state reset to 0ms elapsed / 20.00s countdown!
     setCurrentIndex(nextIdx);
     setUsedIds(nextUsed);
     setStatus('RUNNING');
@@ -229,7 +215,7 @@ export function useGameState() {
     if (s && s.connected) {
       s.emit('admin:start_round', { index: nextIdx, usedIds: nextUsed, startTime: nowEpoch });
     }
-  }, [questions, usedIds, currentIndex, pickNextRandomIndex, postStateUpdate, fetchQuestions]);
+  }, [questions, usedIds, pickNextRandomIndex, postStateUpdate, fetchQuestions]);
 
   // REVEAL ANSWER
   const handleRevealAnswer = useCallback(() => {
