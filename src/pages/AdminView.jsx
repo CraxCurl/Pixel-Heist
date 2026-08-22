@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { AdminControls } from '../components/AdminControls';
 import { QuestionsView } from './QuestionsView';
 import { Topbar } from '../components/Topbar';
-import { Sidebar } from '../components/Sidebar';
 import { Shield, KeyRound, ArrowRight } from 'lucide-react';
 
 const CORRECT_PIN = import.meta.env.VITE_ADMIN_PIN || '112233';
@@ -41,7 +40,7 @@ export function AdminView({ gameState, currentRoute, onNavigate }) {
     return (
       <div className="fixed inset-0 w-screen h-screen bg-[#000000] text-white flex items-center justify-center p-4 select-none font-sans">
         
-        <div className="w-full max-w-sm p-6 rounded bg-[#0A0A0A] border border-[#1F1F1F] shadow-2xl flex flex-col items-center text-center relative z-10 animate-fade-in">
+        <div className="w-full max-w-sm p-6 rounded-xl bg-[#0A0A0A] border border-[#1F1F1F] shadow-2xl flex flex-col items-center text-center relative z-10 animate-fade-in">
           
           <div className="w-10 h-10 rounded bg-[#111111] border border-[#2A2A2A] flex items-center justify-center mb-3 text-white">
             <Shield className="w-5 h-5 text-[#A1A1AA]" />
@@ -51,7 +50,7 @@ export function AdminView({ gameState, currentRoute, onNavigate }) {
             Pixel Heist Admin
           </h2>
           <p className="text-xs text-[#A1A1AA] mb-5">
-            Enter PIN to unlock control dashboard
+            Enter security PIN to unlock control panel
           </p>
 
           <form onSubmit={handlePinSubmit} className="w-full flex flex-col gap-3">
@@ -101,21 +100,13 @@ export function AdminView({ gameState, currentRoute, onNavigate }) {
         isConnected={gameState.isConnected}
       />
 
-      <div className="flex-1 flex w-full max-w-7xl mx-auto">
-        <Sidebar
-          currentRoute={currentRoute}
-          onNavigate={onNavigate}
-          isConnected={gameState.isConnected}
-        />
-
-        <main className="flex-1 p-6 min-w-0 overflow-y-auto">
-          {currentRoute === 'questions' ? (
-            <QuestionsView gameState={gameState} />
-          ) : (
-            <AdminControls gameState={gameState} />
-          )}
-        </main>
-      </div>
+      <main className="flex-1 p-4 sm:p-6 w-full max-w-4xl mx-auto overflow-y-auto">
+        {currentRoute === 'questions' ? (
+          <QuestionsView gameState={gameState} />
+        ) : (
+          <AdminControls gameState={gameState} />
+        )}
+      </main>
     </div>
   );
 }
