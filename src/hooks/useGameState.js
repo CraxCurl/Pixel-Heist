@@ -34,7 +34,7 @@ export function useGameState() {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [usedIds, setUsedIds] = useState([]);
-  const [status, setStatus] = useState('IDLE'); // IDLE, RUNNING, PAUSED, REVEALED, TIMEOUT
+  const [status, setStatus] = useState('IDLE');
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [revealedAtTime, setRevealedAtTime] = useState(null);
@@ -76,11 +76,17 @@ export function useGameState() {
         if (state) {
           if (state.currentIndex !== undefined) setCurrentIndex(state.currentIndex);
           if (state.status !== undefined) setStatus(state.status);
-          if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
-          if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
           if (state.showHint !== undefined) setShowHint(state.showHint);
           if (state.usedIds) setUsedIds(state.usedIds);
-          if (state.startTime !== undefined) setStartTime(state.startTime);
+
+          // DO NOT overwrite active running local tick if round is already running smoothly!
+          if (state.status === 'RUNNING' && state.startTime) {
+            setStartTime((prev) => (prev ? prev : state.startTime));
+          } else {
+            if (state.startTime !== undefined) setStartTime(state.startTime);
+            if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+            if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
+          }
           setIsConnected(true);
         }
       }
@@ -117,18 +123,18 @@ export function useGameState() {
     };
   }, []);
 
-  // Fast 200ms Polling Loop for instantaneous Vercel state sync
+  // Polling loop for Vercel Serverless Sync
   useEffect(() => {
     fetchQuestions();
     fetchState();
 
     pollTimerRef.current = setInterval(() => {
       fetchState();
-    }, 200);
+    }, 400);
 
     const qPollTimer = setInterval(() => {
       fetchQuestions();
-    }, 1500);
+    }, 2000);
 
     const s = getSocket();
     if (s) {
@@ -139,11 +145,16 @@ export function useGameState() {
         if (state) {
           if (state.currentIndex !== undefined) setCurrentIndex(state.currentIndex);
           if (state.status !== undefined) setStatus(state.status);
-          if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
-          if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
           if (state.showHint !== undefined) setShowHint(state.showHint);
           if (state.usedIds) setUsedIds(state.usedIds);
-          if (state.startTime !== undefined) setStartTime(state.startTime);
+
+          if (state.status === 'RUNNING' && state.startTime) {
+            setStartTime((prev) => (prev ? prev : state.startTime));
+          } else {
+            if (state.startTime !== undefined) setStartTime(state.startTime);
+            if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+            if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
+          }
         }
       });
     }
@@ -160,7 +171,7 @@ export function useGameState() {
     };
   }, [fetchQuestions, fetchState]);
 
-  // INSTANT START NEW ROUND
+  // START NEW ROUND
   const handleStartNewRound = useCallback(() => {
     if (questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -168,7 +179,7 @@ export function useGameState() {
     let nextIdx = currentIndex;
     let nextUsed = usedIds;
 
-    if (status === 'REVEALED' || status === 'TIMEOUT' || status === 'IDLE' || status === 'PAUSED') {
+    if (status === 'REVEALED' || status === 'TIMEOUT' || status === 'IDLE') {
       const result = pickNextRandomIndex(questions, usedIds);
       nextIdx = result.index;
       nextUsed = result.nextUsed;
@@ -176,7 +187,7 @@ export function useGameState() {
 
     const nowEpoch = Date.now();
     
-    // Instant local state update (<1ms)
+    // Instant local state update
     setCurrentIndex(nextIdx);
     setUsedIds(nextUsed);
     setStatus('RUNNING');
@@ -206,57 +217,7 @@ export function useGameState() {
     }
   }, [status, questions, usedIds, currentIndex, pickNextRandomIndex, postStateUpdate]);
 
-  // INSTANT PAUSE / RESUME TOGGLE (<1ms)
-  const handleTogglePause = useCallback(() => {
-    if (status !== 'RUNNING' && status !== 'PAUSED') return;
-
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-
-    if (status === 'RUNNING') {
-      const nowEpoch = Date.now();
-      const currentElapsed = startTime ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
-
-      // INSTANT OPTIMISTIC LOCAL PAUSE (<1ms)
-      setStatus('PAUSED');
-      setElapsedTime(currentElapsed);
-      setStartTime(null);
-
-      const payload = {
-        status: 'PAUSED',
-        elapsedTime: currentElapsed,
-        startTime: null
-      };
-
-      postStateUpdate(payload);
-
-      const s = getSocket();
-      if (s && s.connected) {
-        s.emit('admin:pause_round', payload);
-      }
-    } else if (status === 'PAUSED') {
-      const nowEpoch = Date.now();
-      const newStartTime = nowEpoch - elapsedTime;
-
-      // INSTANT OPTIMISTIC LOCAL RESUME (<1ms)
-      setStatus('RUNNING');
-      setStartTime(newStartTime);
-
-      const payload = {
-        status: 'RUNNING',
-        startTime: newStartTime,
-        elapsedTime
-      };
-
-      postStateUpdate(payload);
-
-      const s = getSocket();
-      if (s && s.connected) {
-        s.emit('admin:resume_round', payload);
-      }
-    }
-  }, [status, startTime, elapsedTime, postStateUpdate]);
-
-  // INSTANT REVEAL ANSWER
+  // REVEAL ANSWER
   const handleRevealAnswer = useCallback(() => {
     if (status === 'REVEALED' || status === 'TIMEOUT' || questions.length === 0) return;
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -265,7 +226,6 @@ export function useGameState() {
     const finalElapsed = (status === 'RUNNING' && startTime) ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
     const seconds = (finalElapsed / 1000).toFixed(2);
 
-    // Instant local reveal (<1ms)
     setStatus('REVEALED');
     setElapsedTime(finalElapsed);
     setRevealedAtTime(seconds);
@@ -434,7 +394,6 @@ export function useGameState() {
     toggleSound,
     toggleHint,
     startNewRound: handleStartNewRound,
-    togglePause: handleTogglePause,
     revealAnswer: handleRevealAnswer,
     selectQuestion,
     addCustomQuestion,
