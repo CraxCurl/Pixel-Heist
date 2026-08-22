@@ -92,7 +92,7 @@ export function AdminView({ gameState, currentRoute, onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex flex-col select-none font-sans pt-1">
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col select-none font-sans">
       <Topbar
         currentRoute={currentRoute}
         onNavigate={onNavigate}

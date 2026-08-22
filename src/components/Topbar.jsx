@@ -3,8 +3,8 @@ import { Lock, Tv, Settings } from 'lucide-react';
 
 export function Topbar({ currentRoute, onNavigate, onLock }) {
   return (
-    <header className="w-full bg-[#000000] border-b border-[#1F1F1F] text-xs select-none sticky top-0 z-40 pt-2 sm:pt-0">
-      <div className="max-w-4xl mx-auto px-4 h-14 sm:h-12 flex items-center justify-between">
+    <header className="w-full bg-[#000000] border-b border-[#1F1F1F] text-xs select-none sticky top-0 z-40">
+      <div className="max-w-4xl mx-auto px-4 h-12 flex items-center justify-between">
         
         {/* Left: Clean "Admin Panel" Title */}
         <div className="flex items-center gap-2">
