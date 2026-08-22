@@ -57,18 +57,18 @@ export function AdminControls({ gameState }) {
           </p>
         )}
 
-        {/* SHOW HINT POPUP BUTTON */}
+        {/* SHOW/HIDE HINT POPUP BUTTON (Vercel Dark Theme) */}
         {hasImages && currentQuestion?.hint && (
           <button
             onClick={toggleHint}
-            className={`mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono transition-colors cursor-pointer border ${
+            className={`mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded font-mono text-xs transition-colors cursor-pointer border ${
               showHint
-                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-semibold'
+                ? 'bg-white text-black font-semibold border-white shadow-sm'
                 : 'bg-[#111111] border-[#2A2A2A] text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
             }`}
           >
-            <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-            <span>{showHint ? 'HIDE HINT POPUP' : 'SHOW HINT POPUP ON SCREEN'}</span>
+            <Lightbulb className={`w-3.5 h-3.5 ${showHint ? 'text-black' : 'text-[#A1A1AA]'}`} />
+            <span>{showHint ? 'HIDE HINT POPUP' : 'SHOW HINT POPUP'}</span>
           </button>
         )}
       </div>
