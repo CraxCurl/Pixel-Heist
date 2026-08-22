@@ -4,8 +4,7 @@ import {
   Trophy,
   Database,
   Wifi,
-  Lightbulb,
-  RotateCcw
+  Lightbulb
 } from 'lucide-react';
 
 export function AdminControls({ gameState }) {
@@ -22,7 +21,6 @@ export function AdminControls({ gameState }) {
 
   const hasImages = questions.length > 0;
   const isRunning = status === 'RUNNING';
-  const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col gap-5 p-4 sm:p-6 bg-[#0A0A0A] border border-[#1F1F1F] rounded-xl shadow-2xl relative select-none font-sans text-xs animate-fade-in">
@@ -74,46 +72,33 @@ export function AdminControls({ gameState }) {
         )}
       </div>
 
-      {/* 3. MOBILE-ACCESSIBLE ACTION BUTTONS */}
+      {/* 3. DYNAMIC SINGLE ACTION BUTTON */}
       <div className="flex flex-col gap-3">
-        
-        {/* 1. START NEXT ROUND / RESTART ROUND BUTTON */}
-        <button
-          onClick={startNewRound}
-          disabled={!hasImages}
-          className={`w-full min-h-[56px] py-4 px-6 rounded-lg font-mono font-bold text-base sm:text-lg tracking-wider uppercase flex items-center justify-center gap-2.5 transition-colors cursor-pointer shadow-md ${
-            hasImages
-              ? 'bg-[#111111] hover:bg-[#1A1A1A] border border-[#2A2A2A] text-white active:scale-[0.99]'
-              : 'bg-[#111111] text-[#71717A] border border-[#1F1F1F] cursor-not-allowed'
-          }`}
-        >
-          {isRunning ? (
-            <>
-              <RotateCcw className="w-5 h-5 text-white" />
-              <span>RESTART ROUND</span>
-            </>
-          ) : (
-            <>
-              <Play className="w-5 h-5 fill-current text-white" />
-              <span>START NEXT ROUND</span>
-            </>
-          )}
-        </button>
-
-        {/* 2. REVEAL ANSWER BUTTON */}
-        <button
-          onClick={revealAnswer}
-          disabled={!hasImages || isRevealed}
-          className={`w-full min-h-[56px] py-4 px-6 rounded-lg font-mono font-bold text-base sm:text-lg tracking-wider uppercase flex items-center justify-center gap-2.5 transition-colors shadow-lg ${
-            hasImages && !isRevealed
-              ? 'bg-white hover:bg-neutral-200 text-black active:scale-[0.99] cursor-pointer'
-              : 'bg-[#111111] text-[#71717A] border border-[#1F1F1F] cursor-not-allowed'
-          }`}
-        >
-          <Trophy className="w-5 h-5 text-amber-500" />
-          <span>REVEAL ANSWER ({currentQuestion?.answer || '---'})</span>
-        </button>
-
+        {isRunning ? (
+          /* When round is RUNNING -> REVEAL ANSWER button */
+          <button
+            onClick={revealAnswer}
+            disabled={!hasImages}
+            className="w-full min-h-[60px] py-4 px-6 rounded-lg font-mono font-bold text-lg sm:text-xl tracking-wider uppercase flex items-center justify-center gap-2.5 transition-all bg-white hover:bg-neutral-200 text-black active:scale-[0.99] cursor-pointer shadow-xl"
+          >
+            <Trophy className="w-6 h-6 text-amber-500" />
+            <span>REVEAL ANSWER ({currentQuestion?.answer || '---'})</span>
+          </button>
+        ) : (
+          /* When round is IDLE / REVEALED / TIMEOUT -> START NEXT ROUND button */
+          <button
+            onClick={startNewRound}
+            disabled={!hasImages}
+            className={`w-full min-h-[60px] py-4 px-6 rounded-lg font-mono font-bold text-lg sm:text-xl tracking-wider uppercase flex items-center justify-center gap-2.5 transition-all shadow-xl ${
+              hasImages
+                ? 'bg-white hover:bg-neutral-200 text-black active:scale-[0.99] cursor-pointer'
+                : 'bg-[#111111] text-[#71717A] border border-[#1F1F1F] cursor-not-allowed'
+            }`}
+          >
+            <Play className="w-6 h-6 fill-current text-black" />
+            <span>START NEXT ROUND</span>
+          </button>
+        )}
       </div>
 
     </div>
