@@ -58,7 +58,7 @@ export function AdminView({ gameState }) {
               <input
                 type="password"
                 maxLength={6}
-                placeholder="Enter PIN (112233)"
+                placeholder="Enter Security PIN"
                 value={pinInput}
                 onChange={(e) => {
                   setPinInput(e.target.value);
