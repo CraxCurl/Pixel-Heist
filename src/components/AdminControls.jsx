@@ -27,18 +27,18 @@ export function AdminControls({ gameState }) {
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col gap-5 p-4 sm:p-6 bg-[#0A0A0A] border border-[#1F1F1F] rounded-xl shadow-2xl relative select-none font-sans text-xs animate-fade-in">
       
-      {/* 1. MONGODB ATLAS SYNC STATUS BADGE (Green Wifi) */}
-      <div className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-[#000000] border border-[#1F1F1F]">
+      {/* 1. MONGODB ATLAS SYNC STATUS BADGE (Green Wifi Icon Only) */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#000000] border border-[#1F1F1F]">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4 text-white/80" />
           <span className="font-semibold text-[#A1A1AA] text-xs">MongoDB Atlas Sync</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Wifi className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`} />
-          <span className={`font-bold font-mono text-[11px] ${isConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {isConnected ? 'LIVE CONNECTED' : 'CONNECTING...'}
-          </span>
+        <div className="flex items-center">
+          <Wifi
+            className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`}
+            title={isConnected ? 'Live Connected to MongoDB Atlas' : 'Connecting...'}
+          />
         </div>
       </div>
 
