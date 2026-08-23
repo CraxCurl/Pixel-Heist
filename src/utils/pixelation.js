@@ -1,31 +1,31 @@
 /**
  * Pixelation utility for Pixel Heist
  * Renders an HTML Image onto a canvas using nearest-neighbor low-res scaling.
- * Set to 20 seconds duration with steep easing for ultra-slow unpixelation.
+ * Unpixelates over 20 seconds up to maxScale (0.08) so the image stays partially
+ * pixelated at 0s until the answer is officially declared/revealed.
  */
 
 export const REVEAL_DURATION_MS = 20000; // 20 seconds per round
 
 /**
- * Calculates the current pixel scale factor based on elapsed time (ms).
- * Unpixelates very slowly over 20 seconds using progress^5.0 power curve.
+ * Calculates current pixel scale factor based on elapsed time (ms).
+ * Unpixelates from minScale (0.008) up to a max capped scale of 0.08 at 20 seconds.
  *
  * @param {number} elapsedMs - Time passed in milliseconds (0 to 20000)
  * @param {number} durationMs - Total round duration (default 20000)
- * @returns {number} Scale ratio between minScale (0.008) and 1.0
+ * @returns {number} Scale ratio between minScale (0.008) and maxScale (0.08)
  */
 export function calculatePixelScale(elapsedMs, durationMs = REVEAL_DURATION_MS) {
   const progress = Math.min(Math.max(elapsedMs / durationMs, 0), 1);
   
-  if (progress >= 1) return 1.0;
-
-  // Heavy pixel block grid at start (~8x5 blocks)
+  // Start with heavy pixel blocks at 0s
   const minScale = 0.008; 
-  const maxScale = 1.0;
 
-  // Steep power curve (progress^5.0) ensures image unpixelates VERY SLOWLY
-  // First 14 seconds stay heavily pixelated; detail only emerges in final 5 seconds
-  const eased = Math.pow(progress, 5.0);
+  // Max pixelation reveal cap during 20s countdown (0.08 matches partial pixelation reference)
+  const maxScale = 0.08;
+
+  // Power curve for progressive reveal over 20 seconds
+  const eased = Math.pow(progress, 2.5);
   
   return minScale + (maxScale - minScale) * eased;
 }
@@ -35,8 +35,8 @@ export function calculatePixelScale(elapsedMs, durationMs = REVEAL_DURATION_MS) 
  *
  * @param {HTMLCanvasElement} canvas - Target HTML5 canvas
  * @param {HTMLImageElement} image - Loaded source image
- * @param {number} scale - Current resolution scale factor (0.008 to 1.0)
- * @param {boolean} isRevealed - True when admin reveals or 20.0s limit reached
+ * @param {number} scale - Current resolution scale factor
+ * @param {boolean} isRevealed - True ONLY when admin clicks REVEAL ANSWER
  */
 export function drawPixelatedImage(canvas, image, scale, isRevealed = false) {
   if (!canvas || !image || !image.complete || image.naturalWidth === 0) return;
@@ -47,8 +47,8 @@ export function drawPixelatedImage(canvas, image, scale, isRevealed = false) {
   const width = canvas.width;
   const height = canvas.height;
 
-  // If fully revealed (or scale hits 1.0 at 20s), render crisp original image
-  if (isRevealed || scale >= 0.995) {
+  // Render 100% crisp original image ONLY when admin clicks REVEAL ANSWER
+  if (isRevealed) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);

@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { calculatePixelScale, drawPixelatedImage } from '../utils/pixelation';
 import { ImageOff, Loader2 } from 'lucide-react';
 
-export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, difficultyExponent = 5.0, isBordered = false }) {
+export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, isBordered = false }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -51,10 +51,10 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, d
       }
 
       if (loadedImage) {
-        const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
+        const isRevealed = status === 'REVEALED';
         const currentScale = isRevealed
           ? 1.0
-          : calculatePixelScale(elapsedTime, duration, difficultyExponent);
+          : calculatePixelScale(elapsedTime, duration);
         drawPixelatedImage(canvas, loadedImage, currentScale, isRevealed);
       }
     };
@@ -72,19 +72,19 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, d
       resizeObserver.disconnect();
       window.removeEventListener('fullscreenchange', updateCanvasSizeAndDraw);
     };
-  }, [loadedImage, status, elapsedTime, duration, difficultyExponent]);
+  }, [loadedImage, status, elapsedTime, duration]);
 
   // Main animation render frame
   useEffect(() => {
     if (!canvasRef.current || !loadedImage) return;
 
-    const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
+    const isRevealed = status === 'REVEALED';
     const currentScale = isRevealed
       ? 1.0
-      : calculatePixelScale(elapsedTime, duration, difficultyExponent);
+      : calculatePixelScale(elapsedTime, duration);
 
     drawPixelatedImage(canvasRef.current, loadedImage, currentScale, isRevealed);
-  }, [loadedImage, status, elapsedTime, duration, difficultyExponent]);
+  }, [loadedImage, status, elapsedTime, duration]);
 
   return (
     <div
