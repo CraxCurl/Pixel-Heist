@@ -20,7 +20,7 @@ export function AdminControls({ gameState }) {
   } = gameState;
 
   const hasImages = questions.length > 0;
-  const isRunning = status === 'RUNNING';
+  const isRevealed = status === 'REVEALED';
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col gap-5 p-4 sm:p-6 bg-[#0A0A0A] border border-[#1F1F1F] rounded-xl shadow-2xl relative select-none font-sans text-xs animate-fade-in">
@@ -74,8 +74,8 @@ export function AdminControls({ gameState }) {
 
       {/* 3. DYNAMIC SINGLE ACTION BUTTON */}
       <div className="flex flex-col gap-3">
-        {isRunning ? (
-          /* When round is RUNNING -> REVEAL ANSWER button */
+        {!isRevealed ? (
+          /* When round is RUNNING or TIMEOUT -> REVEAL ANSWER button */
           <button
             onClick={revealAnswer}
             disabled={!hasImages}
@@ -85,7 +85,7 @@ export function AdminControls({ gameState }) {
             <span>REVEAL ANSWER ({currentQuestion?.answer || '---'})</span>
           </button>
         ) : (
-          /* When round is IDLE / REVEALED / TIMEOUT -> START NEXT ROUND button */
+          /* When round is REVEALED or IDLE -> START NEXT ROUND button */
           <button
             onClick={startNewRound}
             disabled={!hasImages}

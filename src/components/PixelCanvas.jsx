@@ -51,7 +51,8 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
       }
 
       if (loadedImage) {
-        const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
+        // Render 100% crisp original image ONLY when status is officially REVEALED
+        const isRevealed = status === 'REVEALED';
         const currentScale = isRevealed
           ? 1.0
           : calculatePixelScale(elapsedTime, duration);
@@ -78,7 +79,8 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
   useEffect(() => {
     if (!canvasRef.current || !loadedImage) return;
 
-    const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
+    // Render 100% crisp original image ONLY when status is officially REVEALED
+    const isRevealed = status === 'REVEALED';
     const currentScale = isRevealed
       ? 1.0
       : calculatePixelScale(elapsedTime, duration);

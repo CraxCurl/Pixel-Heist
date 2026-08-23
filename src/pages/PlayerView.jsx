@@ -18,7 +18,7 @@ export function PlayerView({ gameState }) {
 
   const remainingMs = Math.max(0, duration - elapsedTime);
   const remainingSec = (remainingMs / 1000).toFixed(1);
-  const isWin = status === 'REVEALED' || status === 'TIMEOUT';
+  const isRevealed = status === 'REVEALED';
   const hasImages = questions.length > 0;
 
   const toggleFullscreen = () => {
@@ -33,7 +33,7 @@ export function PlayerView({ gameState }) {
 
   return (
     <div className="fixed inset-0 w-screen h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden select-none font-sans">
-      <ConfettiEffect active={isWin} />
+      <ConfettiEffect active={isRevealed} />
 
       {/* FULLSCREEN PIXELATED IMAGE CANVAS */}
       <div className="w-full h-full relative flex items-center justify-center">
@@ -94,8 +94,8 @@ export function PlayerView({ gameState }) {
         </div>
       )}
 
-      {/* FLOATING TIMER BADGE */}
-      {hasImages && status !== 'REVEALED' && status !== 'TIMEOUT' && (
+      {/* FLOATING TIMER BADGE (Shows timer down to 0.0s during round or timeout) */}
+      {hasImages && !isRevealed && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center">
           <div className="px-5 py-2 rounded-full bg-[#0A0A0A] border border-[#1F1F1F] shadow-2xl flex items-center gap-2.5">
             <div className={`w-2.5 h-2.5 rounded-full ${
@@ -108,8 +108,8 @@ export function PlayerView({ gameState }) {
         </div>
       )}
 
-      {/* FLOATING REVEAL ANSWER BANNER */}
-      {hasImages && (status === 'REVEALED' || status === 'TIMEOUT') && (
+      {/* FLOATING REVEAL ANSWER BANNER (Appears ONLY when admin clicks REVEAL ANSWER) */}
+      {hasImages && isRevealed && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-xl px-4 pointer-events-none animate-fade-in">
           <div className="p-5 rounded-lg bg-[#0A0A0A] border border-[#2A2A2A] shadow-2xl text-center">
             <span className="text-[11px] font-mono font-medium tracking-widest text-emerald-400 uppercase block mb-1">
