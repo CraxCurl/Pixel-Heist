@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { Search, Plus, Trash2, ImagePlus, Upload, X } from 'lucide-react';
+import { Search, Plus, Trash2, ImagePlus, Upload, X, Clock, Settings2 } from 'lucide-react';
+
+const DURATION_OPTIONS = [
+  { label: '10 sec', value: 10000 },
+  { label: '20 sec', value: 20000 },
+  { label: '30 sec', value: 30000 },
+  { label: '40 sec', value: 40000 },
+  { label: '50 sec', value: 50000 },
+  { label: '60 sec', value: 60000 }
+];
 
 export function QuestionsView({ gameState }) {
-  const { questions, addCustomQuestion, deleteQuestion } = gameState;
+  const { questions, addCustomQuestion, deleteQuestion, duration, setRoundDuration } = gameState;
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploader, setShowUploader] = useState(false);
   const [newAnswer, setNewAnswer] = useState('');
@@ -55,9 +64,9 @@ export function QuestionsView({ gameState }) {
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F1F1F]">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Question Bank</h1>
+          <h1 className="text-xl font-bold text-white tracking-tight">Question Bank & Settings</h1>
           <p className="text-xs text-[#A1A1AA] mt-0.5">
-            Manage target images and participant hints saved in MongoDB Atlas.
+            Configure round unpixelation time limit and manage target images saved in MongoDB Atlas.
           </p>
         </div>
 
@@ -68,6 +77,42 @@ export function QuestionsView({ gameState }) {
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Question</span>
         </button>
+      </div>
+
+      {/* UNPIXELATION DURATION SETTINGS CARD */}
+      <div className="p-4 rounded-lg bg-[#0A0A0A] border border-[#1F1F1F] flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-semibold text-white">Round Unpixelation Speed / Time Limit</span>
+          </div>
+          <span className="text-xs font-mono text-cyan-400 font-bold">
+            Current: {duration / 1000}s
+          </span>
+        </div>
+
+        <p className="text-xs text-[#A1A1AA]">
+          Select how long each image downsamples and unpixelates before timing out:
+        </p>
+
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {DURATION_OPTIONS.map((opt) => {
+            const isActive = duration === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setRoundDuration(opt.value)}
+                className={`py-2 px-3 rounded text-xs font-mono font-bold transition-all cursor-pointer border text-center ${
+                  isActive
+                    ? 'bg-white text-black border-white shadow'
+                    : 'bg-[#111111] hover:bg-[#1A1A1A] border-[#2A2A2A] text-[#A1A1AA] hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* TOOLBAR SEARCH */}

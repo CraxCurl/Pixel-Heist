@@ -23,6 +23,10 @@ const GameStateSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  duration: {
+    type: Number,
+    default: 20000
+  },
   revealedAtTime: {
     type: String,
     default: null

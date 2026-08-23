@@ -9,7 +9,7 @@ import {
   setMuted
 } from '../utils/soundEngine';
 
-const REVEAL_DURATION_MS = 20000; // 20 seconds limit per round
+const DEFAULT_DURATION_MS = 20000; // 20 seconds default round limit
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || (
   window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin
@@ -37,6 +37,7 @@ export function useGameState() {
   const [status, setStatus] = useState('IDLE');
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [duration, setDuration] = useState(DEFAULT_DURATION_MS);
   const [revealedAtTime, setRevealedAtTime] = useState(null);
   const [showHint, setShowHint] = useState(false);
   const [soundMuted, setSoundMuted] = useState(getMuted());
@@ -70,7 +71,6 @@ export function useGameState() {
   }, []);
 
   const fetchState = useCallback(async () => {
-    // If local user triggered an action in last 2 seconds, don't overwrite local state
     if (Date.now() - lastLocalUpdateRef.current < 2000) {
       return;
     }
@@ -86,6 +86,7 @@ export function useGameState() {
           if (state.usedIds) setUsedIds(state.usedIds);
           if (state.startTime !== undefined) setStartTime(state.startTime);
           if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+          if (state.duration !== undefined) setDuration(state.duration);
           if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
           setIsConnected(true);
         }
@@ -103,6 +104,12 @@ export function useGameState() {
       }).catch(() => {});
     } catch (e) {}
   }, []);
+
+  const setRoundDuration = useCallback((durationMs) => {
+    lastLocalUpdateRef.current = Date.now();
+    setDuration(durationMs);
+    postStateUpdate({ duration: durationMs });
+  }, [postStateUpdate]);
 
   const pickNextRandomIndex = useCallback((allQuestions, currentUsed) => {
     if (!allQuestions || allQuestions.length === 0) return { index: 0, nextUsed: [] };
@@ -151,6 +158,7 @@ export function useGameState() {
           if (state.usedIds) setUsedIds(state.usedIds);
           if (state.startTime !== undefined) setStartTime(state.startTime);
           if (state.elapsedTime !== undefined) setElapsedTime(state.elapsedTime);
+          if (state.duration !== undefined) setDuration(state.duration);
           if (state.revealedAtTime !== undefined) setRevealedAtTime(state.revealedAtTime);
         }
       });
@@ -187,7 +195,7 @@ export function useGameState() {
 
     const nowEpoch = Date.now();
 
-    // Instant local state reset to 0ms elapsed / 20.00s countdown!
+    // Instant local state reset to 0ms elapsed
     setCurrentIndex(nextIdx);
     setUsedIds(nextUsed);
     setStatus('RUNNING');
@@ -204,6 +212,7 @@ export function useGameState() {
       status: 'RUNNING',
       startTime: nowEpoch,
       elapsedTime: 0,
+      duration: duration,
       revealedAtTime: null,
       showHint: false,
       usedIds: nextUsed
@@ -215,7 +224,7 @@ export function useGameState() {
     if (s && s.connected) {
       s.emit('admin:start_round', { index: nextIdx, usedIds: nextUsed, startTime: nowEpoch });
     }
-  }, [questions, usedIds, pickNextRandomIndex, postStateUpdate, fetchQuestions]);
+  }, [questions, usedIds, duration, pickNextRandomIndex, postStateUpdate, fetchQuestions]);
 
   // REVEAL ANSWER
   const handleRevealAnswer = useCallback(() => {
@@ -224,7 +233,7 @@ export function useGameState() {
     lastLocalUpdateRef.current = Date.now();
 
     const nowEpoch = Date.now();
-    const finalElapsed = (status === 'RUNNING' && startTime) ? Math.min(nowEpoch - startTime, REVEAL_DURATION_MS) : elapsedTime;
+    const finalElapsed = (status === 'RUNNING' && startTime) ? Math.min(nowEpoch - startTime, duration) : elapsedTime;
     const seconds = (finalElapsed / 1000).toFixed(2);
 
     setStatus('REVEALED');
@@ -245,7 +254,7 @@ export function useGameState() {
     if (s && s.connected) {
       s.emit('admin:reveal_answer', { finalElapsed, seconds });
     }
-  }, [status, startTime, elapsedTime, postStateUpdate]);
+  }, [status, startTime, elapsedTime, duration, postStateUpdate]);
 
   // TOGGLE / SHOW HINT
   const toggleHint = useCallback(() => {
@@ -338,23 +347,24 @@ export function useGameState() {
       const nowEpoch = Date.now();
       const currentElapsed = Math.max(0, nowEpoch - startTime);
 
-      if (currentElapsed >= REVEAL_DURATION_MS) {
-        setElapsedTime(REVEAL_DURATION_MS);
+      if (currentElapsed >= duration) {
+        const durSec = (duration / 1000).toFixed(2);
+        setElapsedTime(duration);
         setStatus('TIMEOUT');
-        setRevealedAtTime('20.00');
+        setRevealedAtTime(durSec);
         playTimeoutSound();
 
         postStateUpdate({
           status: 'TIMEOUT',
-          elapsedTime: REVEAL_DURATION_MS,
-          revealedAtTime: '20.00'
+          elapsedTime: duration,
+          revealedAtTime: durSec
         });
 
         const s = getSocket();
         if (s && s.connected) {
           s.emit('admin:reveal_answer', {
-            finalElapsed: REVEAL_DURATION_MS,
-            seconds: '20.00'
+            finalElapsed: duration,
+            seconds: durSec
           });
         }
         return;
@@ -362,7 +372,7 @@ export function useGameState() {
 
       setElapsedTime(currentElapsed);
 
-      const remainingSec = (REVEAL_DURATION_MS - currentElapsed) / 1000;
+      const remainingSec = (duration - currentElapsed) / 1000;
       if (remainingSec <= 8 && remainingSec > 4 && !lastWarningRef.current.tenSec) {
         lastWarningRef.current.tenSec = true;
         playWarningSound(false);
@@ -379,7 +389,7 @@ export function useGameState() {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [status, startTime, postStateUpdate]);
+  }, [status, startTime, duration, postStateUpdate]);
 
   return {
     questions,
@@ -387,7 +397,7 @@ export function useGameState() {
     currentQuestion,
     status,
     elapsedTime,
-    duration: REVEAL_DURATION_MS,
+    duration,
     revealedAtTime,
     showHint,
     usedCount: usedIds.length,
@@ -396,6 +406,7 @@ export function useGameState() {
     isConnected,
     toggleSound,
     toggleHint,
+    setRoundDuration,
     startNewRound: handleStartNewRound,
     revealAnswer: handleRevealAnswer,
     selectQuestion,

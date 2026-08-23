@@ -14,6 +14,7 @@ const StateSchema = new mongoose.Schema({
   status: { type: String, default: 'IDLE' },
   startTime: { type: Number, default: null },
   elapsedTime: { type: Number, default: 0 },
+  duration: { type: Number, default: 20000 },
   revealedAtTime: { type: String, default: null },
   showHint: { type: Boolean, default: false },
   usedIds: { type: [String], default: [] },
@@ -27,6 +28,7 @@ let inMemoryState = {
   status: 'IDLE',
   startTime: null,
   elapsedTime: 0,
+  duration: 20000,
   revealedAtTime: null,
   showHint: false,
   usedIds: []
@@ -63,6 +65,7 @@ export default async function handler(req, res) {
           status: doc.status,
           startTime: doc.startTime,
           elapsedTime: doc.elapsedTime,
+          duration: doc.duration || 20000,
           revealedAtTime: doc.revealedAtTime,
           showHint: doc.showHint,
           usedIds: doc.usedIds
