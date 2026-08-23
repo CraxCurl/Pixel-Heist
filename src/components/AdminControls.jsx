@@ -20,6 +20,7 @@ export function AdminControls({ gameState }) {
   } = gameState;
 
   const hasImages = questions.length > 0;
+  // Show START NEXT ROUND button ONLY after admin has officially pressed REVEAL ANSWER
   const isRevealed = status === 'REVEALED';
 
   return (
@@ -72,20 +73,10 @@ export function AdminControls({ gameState }) {
         )}
       </div>
 
-      {/* 3. DYNAMIC SINGLE ACTION BUTTON */}
+      {/* 3. SINGLE DYNAMIC ACTION BUTTON */}
       <div className="flex flex-col gap-3">
-        {!isRevealed ? (
-          /* When round is RUNNING or TIMEOUT -> REVEAL ANSWER button */
-          <button
-            onClick={revealAnswer}
-            disabled={!hasImages}
-            className="w-full min-h-[60px] py-4 px-6 rounded-lg font-mono font-bold text-lg sm:text-xl tracking-wider uppercase flex items-center justify-center gap-2.5 transition-all bg-white hover:bg-neutral-200 text-black active:scale-[0.99] cursor-pointer shadow-xl"
-          >
-            <Trophy className="w-6 h-6 text-amber-500" />
-            <span>REVEAL ANSWER ({currentQuestion?.answer || '---'})</span>
-          </button>
-        ) : (
-          /* When round is REVEALED or IDLE -> START NEXT ROUND button */
+        {isRevealed ? (
+          /* Show START NEXT ROUND ONLY after admin has pressed REVEAL ANSWER */
           <button
             onClick={startNewRound}
             disabled={!hasImages}
@@ -97,6 +88,16 @@ export function AdminControls({ gameState }) {
           >
             <Play className="w-6 h-6 fill-current text-black" />
             <span>START NEXT ROUND</span>
+          </button>
+        ) : (
+          /* Show REVEAL ANSWER at 0s timeout and during round until admin clicks it */
+          <button
+            onClick={revealAnswer}
+            disabled={!hasImages}
+            className="w-full min-h-[60px] py-4 px-6 rounded-lg font-mono font-bold text-lg sm:text-xl tracking-wider uppercase flex items-center justify-center gap-2.5 transition-all bg-white hover:bg-neutral-200 text-black active:scale-[0.99] cursor-pointer shadow-xl"
+          >
+            <Trophy className="w-6 h-6 text-amber-500" />
+            <span>REVEAL ANSWER ({currentQuestion?.answer || '---'})</span>
           </button>
         )}
       </div>
