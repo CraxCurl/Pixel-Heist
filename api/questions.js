@@ -38,7 +38,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
       const newQ = {
         title: title || answer,
         answer: answer.toUpperCase(),
-        category: category || 'Custom',
+        category: category || 'General',
         hint: hint || '',
         image: finalImageUrl
       };
@@ -101,6 +101,51 @@ export default async function handler(req, res) {
       }
 
       return res.status(201).json({ id: String(Date.now()), ...newQ });
+    }
+
+    if (req.method === 'PUT') {
+      const { id, title, answer, category, hint, image } = req.body || {};
+      if (!id) {
+        return res.status(400).json({ error: 'Question ID is required for editing' });
+      }
+
+      let updates = {
+        title: title || answer,
+        answer: answer ? answer.toUpperCase() : undefined,
+        category: category || 'General',
+        hint: hint !== undefined ? hint : ''
+      };
+
+      if (image) {
+        let finalImageUrl = image;
+        if (image.startsWith('data:image') && process.env.CLOUDINARY_CLOUD_NAME) {
+          try {
+            const uploadRes = await cloudinary.uploader.upload(image, {
+              folder: 'pixel_heist'
+            });
+            if (uploadRes && uploadRes.secure_url) {
+              finalImageUrl = uploadRes.secure_url;
+            }
+          } catch (cErr) {
+            console.warn('Cloudinary upload warning:', cErr.message);
+          }
+        }
+        updates.image = finalImageUrl;
+      }
+
+      if (mongoose.connection.readyState >= 1) {
+        const updated = await Question.findByIdAndUpdate(id, updates, { new: true });
+        return res.status(200).json({
+          id: updated._id.toString(),
+          title: updated.title,
+          answer: updated.answer,
+          category: updated.category,
+          hint: updated.hint,
+          image: updated.image
+        });
+      }
+
+      return res.status(200).json({ id, ...updates });
     }
 
     if (req.method === 'DELETE') {

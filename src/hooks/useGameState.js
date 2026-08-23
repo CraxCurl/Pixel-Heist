@@ -322,6 +322,22 @@ export function useGameState() {
     }
   }, [fetchQuestions]);
 
+  // EDIT / UPDATE QUESTION
+  const updateQuestion = useCallback(async (id, updatedFields) => {
+    try {
+      const res = await fetch('/api/questions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updatedFields })
+      });
+      const data = await res.json();
+      await fetchQuestions();
+      return data;
+    } catch (err) {
+      console.error('Error updating question:', err);
+    }
+  }, [fetchQuestions]);
+
   // DELETE QUESTION
   const deleteQuestion = useCallback(async (index) => {
     const target = questions[index];
@@ -411,6 +427,7 @@ export function useGameState() {
     revealAnswer: handleRevealAnswer,
     selectQuestion,
     addCustomQuestion,
+    updateQuestion,
     deleteQuestion
   };
 }
