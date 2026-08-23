@@ -164,8 +164,8 @@ export function QuestionsView({ gameState }) {
         </span>
       </div>
 
-      {/* QUESTIONS TABLE */}
-      <div className="w-full rounded border border-[#1F1F1F] bg-[#0A0A0A] overflow-hidden">
+      {/* RESPONSIVE QUESTIONS TABLE WITH PINNED STICKY ACTIONS COLUMN */}
+      <div className="w-full rounded-lg border border-[#1F1F1F] bg-[#0A0A0A] overflow-x-auto shadow-2xl">
         {questions.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
             <ImagePlus className="w-10 h-10 text-[#71717A]" />
@@ -175,47 +175,47 @@ export function QuestionsView({ gameState }) {
             </p>
           </div>
         ) : (
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#000000] border-b border-[#1F1F1F] text-[11px] font-mono text-[#71717A] uppercase tracking-wider">
+          <table className="w-full min-w-[540px] text-left text-xs border-collapse">
+            <thead className="bg-[#000000] border-b border-[#1F1F1F] text-[11px] font-mono text-[#71717A] uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="py-2.5 px-4 font-normal">Image</th>
-                <th className="py-2.5 px-4 font-normal">Target Answer</th>
-                <th className="py-2.5 px-4 font-normal">Participant Hint</th>
-                <th className="py-2.5 px-4 font-normal text-right">Actions</th>
+                <th className="py-3 px-3 font-normal w-14 text-center">Image</th>
+                <th className="py-3 px-3 font-normal w-36 sm:w-48">Target Answer</th>
+                <th className="py-3 px-3 font-normal">Participant Hint</th>
+                <th className="py-3 px-3 font-normal text-right w-24 sticky right-0 bg-[#000000] border-l border-[#1F1F1F]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1F1F1F]">
               {filteredQuestions.map((q, idx) => (
-                <tr key={q.id || idx} className="hover:bg-[#111111] transition-colors">
-                  <td className="py-2.5 px-4">
-                    <div className="w-12 h-9 rounded bg-[#000000] border border-[#1F1F1F] overflow-hidden">
+                <tr key={q.id || idx} className="hover:bg-[#111111] transition-colors group">
+                  <td className="py-3 px-3 align-middle text-center">
+                    <div className="w-11 h-9 rounded bg-[#000000] border border-[#1F1F1F] overflow-hidden mx-auto">
                       <img src={q.image} alt={q.answer} className="w-full h-full object-cover" />
                     </div>
                   </td>
-                  <td className="py-2.5 px-4 font-mono font-semibold text-white tracking-wider">
+                  <td className="py-3 px-3 align-middle font-mono font-semibold text-white tracking-wider break-words max-w-[150px] sm:max-w-none">
                     {q.answer}
                   </td>
-                  <td className="py-2.5 px-4 text-[#A1A1AA] italic">
+                  <td className="py-3 px-3 align-middle text-[#A1A1AA] italic break-words max-w-[200px] sm:max-w-none">
                     {q.hint || '—'}
                   </td>
-                  <td className="py-2.5 px-4 text-right">
-                    <div className="inline-flex items-center justify-end gap-1">
+                  <td className="py-3 px-3 align-middle text-right sticky right-0 bg-[#0A0A0A] group-hover:bg-[#111111] border-l border-[#1F1F1F] transition-colors">
+                    <div className="inline-flex items-center justify-end gap-1.5">
                       {/* EDIT BUTTON */}
                       <button
                         onClick={() => handleOpenEditModal(q)}
-                        className="p-1.5 rounded hover:bg-[#1F1F1F] text-[#71717A] hover:text-white transition-colors cursor-pointer"
+                        className="p-2 rounded bg-[#111111] hover:bg-[#1A1A1A] border border-[#2A2A2A] text-white transition-colors cursor-pointer"
                         title="Edit Target Answer & Hint"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-3.5 h-3.5 text-[#A1A1AA] hover:text-white" />
                       </button>
 
                       {/* DELETE BUTTON */}
                       <button
                         onClick={() => deleteQuestion(idx)}
-                        className="p-1.5 rounded hover:bg-[#1F1F1F] text-[#71717A] hover:text-red-400 transition-colors cursor-pointer"
+                        className="p-2 rounded bg-[#111111] hover:bg-[#1A1A1A] border border-[#2A2A2A] text-white transition-colors cursor-pointer"
                         title="Delete Question"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-300" />
                       </button>
                     </div>
                   </td>
