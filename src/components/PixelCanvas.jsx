@@ -51,7 +51,7 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
       }
 
       if (loadedImage) {
-        const isRevealed = status === 'REVEALED';
+        const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
         const currentScale = isRevealed
           ? 1.0
           : calculatePixelScale(elapsedTime, duration);
@@ -78,7 +78,7 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
   useEffect(() => {
     if (!canvasRef.current || !loadedImage) return;
 
-    const isRevealed = status === 'REVEALED';
+    const isRevealed = status === 'REVEALED' || status === 'TIMEOUT';
     const currentScale = isRevealed
       ? 1.0
       : calculatePixelScale(elapsedTime, duration);
