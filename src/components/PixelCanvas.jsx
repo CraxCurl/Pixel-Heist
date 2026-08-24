@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { calculatePixelScale, drawPixelatedImage } from '../utils/pixelation';
+import { getCachedImage, preloadImage } from '../utils/imagePreloader';
 import { ImageOff, Loader2 } from 'lucide-react';
 
 export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, isBordered = false }) {
@@ -10,27 +11,32 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Load image when imageSrc changes
+  // Instant Cache Check & Preload Listener
   useEffect(() => {
     if (!imageSrc) return;
+
+    // 1. Instant Memory Cache Lookup (0ms latency for preloaded venue images)
+    const cached = getCachedImage(imageSrc);
+    if (cached) {
+      setLoadedImage(cached);
+      setLoading(false);
+      setError(false);
+      return;
+    }
 
     setLoading(true);
     setError(false);
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      setLoadedImage(img);
-      setLoading(false);
-    };
-
-    img.onerror = () => {
-      setError(true);
-      setLoading(false);
-    };
-
-    img.src = imageSrc;
+    // 2. Preload & cache image if not in memory yet
+    preloadImage(imageSrc)
+      .then((img) => {
+        setLoadedImage(img);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
   }, [imageSrc]);
 
   // ResizeObserver and fullscreenchange handler so image NEVER disappears on resize or fullscreen
@@ -51,7 +57,6 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
       }
 
       if (loadedImage) {
-        // Render 100% crisp original image ONLY when status is officially REVEALED
         const isRevealed = status === 'REVEALED';
         const currentScale = isRevealed
           ? 1.0
@@ -79,7 +84,6 @@ export function PixelCanvas({ imageSrc, status, elapsedTime, duration = 20000, i
   useEffect(() => {
     if (!canvasRef.current || !loadedImage) return;
 
-    // Render 100% crisp original image ONLY when status is officially REVEALED
     const isRevealed = status === 'REVEALED';
     const currentScale = isRevealed
       ? 1.0

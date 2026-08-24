@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { preloadAllQuestions, preloadImage } from '../utils/imagePreloader';
 import {
   playStartSound,
   playWarningSound,
@@ -65,6 +66,9 @@ export function useGameState() {
         const data = await res.json();
         setQuestions(data || []);
         setIsConnected(true);
+        if (Array.isArray(data)) {
+          preloadAllQuestions(data);
+        }
         return data;
       }
     } catch (e) {}
@@ -148,7 +152,10 @@ export function useGameState() {
     if (s) {
       s.on('connect', () => setIsConnected(true));
       s.on('disconnect', () => setIsConnected(false));
-      s.on('questions:updated', (updated) => setQuestions(updated || []));
+      s.on('questions:updated', (updated) => {
+        setQuestions(updated || []);
+        if (Array.isArray(updated)) preloadAllQuestions(updated);
+      });
       s.on('game:state_changed', (state) => {
         if (Date.now() - lastLocalUpdateRef.current < 2000) return;
         if (state) {
@@ -177,7 +184,7 @@ export function useGameState() {
   }, [fetchQuestions, fetchState]);
 
   // START NEW ROUND
-  const handleStartNewRound = useCallback(() => {
+  const handleStartNewRound = useCallback(async () => {
     lastLocalUpdateRef.current = Date.now();
 
     if (animFrameRef.current) {
@@ -186,12 +193,18 @@ export function useGameState() {
 
     let currentQList = questions;
     if (currentQList.length === 0) {
-      fetchQuestions();
+      currentQList = await fetchQuestions() || [];
     }
 
     const result = pickNextRandomIndex(currentQList, usedIds);
     const nextIdx = result.index;
     const nextUsed = result.nextUsed;
+
+    const targetQuestion = currentQList[nextIdx];
+    if (targetQuestion && targetQuestion.image) {
+      // Preload image to ensure 0ms network latency on player display laptop
+      preloadImage(targetQuestion.image).catch(() => {});
+    }
 
     const nowEpoch = Date.now();
 
